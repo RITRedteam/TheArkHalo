@@ -1,0 +1,14 @@
+version: '3'
+services:
+        halo:
+                build: .
+                network_mode: 'host'
+                privileged: true
+                environment:
+                  - THEARK_SERVER=http://10.4.1.10
+                  - ENV THEARK_USER=admin
+ENV THEARK_PASS password
+ENV THEARK_TYPE CrowdControl
+ENV THEARK_UPSTREAM http://cc.c2the.world
+
+
