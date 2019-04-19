@@ -1,60 +1,51 @@
-from pyroute2 import IPDB
 from arkclient import ArkClient
 import os
+from netassign import _addVirtualInterface, _delAllInterfaces
 
+DEVICE='ens160'
 
 def allocateIPs(ips):
+    valid_ips = []
     for i in ips:
-        ip = IPDB()
-        with ip.interfaces.ens160 as eth0:
-                eth0.add_ip('%s/24' % i)
-        ip.release()
+        try:
+            print("Adding virtual IP", i)
+            _addVirtualInterface(i, DEVICE)
+            valid_ips.append(i)
+        except:
+            pass
+    return valid_ips
 
-
-def addServers(struct):
+def addServers(data):
     srv_temp = "worker_processes 5;\nevents {\n    worker_connections 4096;\n}\
             \n\nhttp {\n    server {\n"
-    print(struct)
-    for ip in struct['vips']['addresses']:
+    valid_ips = allocateIPs(data['addresses'])
+    for ip in valid_ips:
         listen_str = "    listen    " + ip + ":80;\n"
         srv_temp += listen_str
-    loc_str = "\n    location / {\n        proxy_pass    " + struct['upstreamip']\
-            + "\n    }\n}\n}"
+    loc_str = "\n    location / {\n        proxy_pass    " + data['upstreamip']\
+            + ";\n    }\n}\n}"
     srv_temp += loc_str
-    """
-    server_template = "\n\
-    server {            \n\
-      listen:   %s;     \n\
-      location: / {     \n\
-          proxy_pass http://%s \n\
-          proxy_set_header        Host            $host; \n\
-          proxy_set_header        X-Real-IP       $remote_addr; \n\
-          proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for; \n\
-      }                 \n\
-    }"                  
-    allocateIPs(struct['vips'])
-    retval = ""
-    for i in struct['vips']:
-        print(server_template % (i, struct['upstreamip']))
-    """
+
     print(srv_temp)
+    with open("/etc/nginx/nginx.conf", "w+") as f:
+        f.write(srv_temp)
     return srv_temp
 
 def main():
     client = ArkClient(os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000"))
     arkuser = os.environ.get("THEARK_USER", "admin")
     arkpass = os.environ.get("THEARK_PASS", "letmein")
+    arktype = os.environ.get("THEARK_TYPE", "")
+    arkupst = os.environ.get("THEARK_UPSTREAM", "")
     try:
         client.login(arkuser, arkpass)
     except:
         raise Exception("Couldn't log in...")
     #if not client.login(arkuser, arkpass):
     #    raise Exception("Couldn't log in...")
-    addrs = client.getAddresses('CrowdControl')
-    cc = {}
-    cc['Name'] = 'crowdcontrol'
-    cc['upstreamip'] = 'cc.c2the.world'
-    cc['vips'] = addrs
+    addrs = client.getAddresses(arktype)
+    addrs['upstreamip'] = arkupst
+    addrs['addresses'] = addrs['addresses'][:3]
     
     #structs = {}
     #structs['cc'] = {}
@@ -67,8 +58,9 @@ def main():
     #structs['arsenal']['vips'] = ['10.0.0.6', '10.0.0.7', '10.0.0.8', '10.0.0.9']
 
     #Iterate through services
-    addServers(cc)
+    addServers(addrs)
 
 
 if(__name__ == "__main__"):
+    _delAllInterfaces()
     main()

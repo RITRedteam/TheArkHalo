@@ -1,2 +1,8 @@
 from nginx:alpine
-COPY nginx.conf /etc/nginx/nginx.conf
+RUN apk add python3
+COPY . /opt/app
+WORKDIR /opt/app
+RUN pip3 install requests
+
+ENTRYPOINT ["entrypoint.sh"]
+
