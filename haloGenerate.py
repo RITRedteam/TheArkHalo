@@ -51,7 +51,9 @@ def main():
         print("Registering {} with The Ark".format(arktype))
         addrs = client.registerHalo(arktype, 15) # Register 15 new IP addresses
     else:
+        print("Halo is not registered, getting IPs")
         addrs = client.getAddresses(arktype)
+        print(addrs)
     addrs['upstreamip'] = arkupst
     addServers(addrs)
 
