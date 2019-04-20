@@ -4,5 +4,5 @@ COPY . /opt/app
 WORKDIR /opt/app
 RUN pip3 install requests
 
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "entrypoint.sh"]
 

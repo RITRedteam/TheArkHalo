@@ -43,6 +43,21 @@ def _addVirtualInterface(ip, dev):
                         res.get('stderr', ''), command))
     return label
 
+def _getInterfaceLabels(dev):
+    '''
+    return the labels of all virtual interfaces for a dev
+    '''
+    # The command to list all the labels assigned to an interface
+    command = "".join(("ip a show dev {0} | grep -Eo '{0}:[a-zA-Z0-9:]+'",
+                       " | cut -d':' -f2-"))
+    # command = "ip a show dev {0}"
+    command = command.format(dev)
+    res = execute(command)
+    try:
+        labels = res['stdout'].strip().split()
+        return labels
+    except Exception:
+        raise Exception("Cannot get labels: {}".format(res.get('stderr', '')))
 
 def _delVirtualInterface(ip, dev):
     '''

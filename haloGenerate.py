@@ -6,6 +6,7 @@ DEVICE='ens160'
 
 def allocateIPs(ips):
     valid_ips = []
+    print("IPS: " + str(ips))
     for i in ips:
         try:
             print("Adding virtual IP", i)
@@ -46,7 +47,8 @@ def main():
     addrs = client.getAddresses(arktype)
     addrs['upstreamip'] = arkupst
     addrs['addresses'] = addrs['addresses'][:3]
-    
+
+
     #structs = {}
     #structs['cc'] = {}
     #structs['cc']['Name'] = 'crowdcontrol'
