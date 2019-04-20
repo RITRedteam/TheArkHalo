@@ -42,24 +42,17 @@ def main():
         client.login(arkuser, arkpass)
     except:
         raise Exception("Couldn't log in...")
-    #if not client.login(arkuser, arkpass):
-    #    raise Exception("Couldn't log in...")
-    addrs = client.getAddresses(arktype)
+    
+
+    # Register the new halo if it doesnt exist already
+    register = os.environ.get('THEARK_REGISTER', "False")
+    register = register.lower().strip() in ["true", "yes", "1", "t"]
+    if register and arktype not in client.getHalos():
+        print("Registering {} with The Ark".format(arktype))
+        addrs = client.registerHalo(arktype, 15) # Register 15 new IP addresses
+    else:
+        addrs = client.getAddresses(arktype)
     addrs['upstreamip'] = arkupst
-    addrs['addresses'] = addrs['addresses'][:3]
-
-
-    #structs = {}
-    #structs['cc'] = {}
-    #structs['cc']['Name'] = 'crowdcontrol'
-    #structs['cc']['upstreamip'] = '192.168.1.1'
-    #structs['cc']['vips'] = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4']
-    #structs['arsenal'] = {}
-    #structs['arsenal']['Name'] = 'Arsenal'
-    #structs['arsenal']['upstreamip'] = '192.168.1.2'
-    #structs['arsenal']['vips'] = ['10.0.0.6', '10.0.0.7', '10.0.0.8', '10.0.0.9']
-
-    #Iterate through services
     addServers(addrs)
 
 

@@ -1,8 +1,9 @@
 from subprocess import Popen, PIPE
 import random
+import os
 import __main__ 
 
-LABEL="tmp"
+LABEL=os.environ.get("THEARK_TYPE", "Name")[:4].lower()
 def execute(args):
     '''
     Execute a command. Pass the args as an array if there is more than one

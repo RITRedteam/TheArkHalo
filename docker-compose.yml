@@ -10,3 +10,4 @@ services:
         - THEARK_PASS=password
         - THEARK_TYPE=CrowdControl
         - THEARK_UPSTREAM=http://cc.c2the.world
+        - THEARK_REGISTER=False # Auto register the Halo if it doesnt exist
