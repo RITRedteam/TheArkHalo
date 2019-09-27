@@ -1,6 +1,6 @@
 from nginx:alpine
 RUN apk add python3
-COPY . /opt/app
+COPY ./halo /opt/app
 WORKDIR /opt/app
 RUN pip3 install requests
 
