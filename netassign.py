@@ -1,5 +1,6 @@
 from subprocess import Popen, PIPE
 import random
+import socket
 import os
 import __main__ 
 
@@ -80,3 +81,48 @@ def _delAllInterfaces():
         if ip:
             print("Deleting", ip)
             _delVirtualInterface(ip, __main__.DEVICE)
+
+
+def _getIp(host="1.1.1.1"):
+    """Get the ip address that would be used to connect to this host
+
+    Args:
+        host (str): the host to connect to, default to an external host
+    """
+    soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    soc.connect((host,1))
+    ip = soc.getsockname()[0]
+    soc.close()
+    return ip
+
+
+def _getSubnetMaskFromIp(ip):
+    """Get the subnet mask for the given IP
+
+    Args:
+        ip (str): the ip address
+    Returns:
+        str: the subnet mask
+    """
+    res = execute("ip addr | grep -oE '{}/[^ ]+'".format(ip))  # Get three lines of output
+    if res.get('status', 255) != 0:
+        raise Exception("Cannot find default interface: {}".format(res.get('stderr', '')))
+    mask = res['stdout'].split("/")[-1].strip()
+    return "/" + mask
+
+
+def _getInterfaceNameFromIp(ip):
+    """Given an IP address, return the interface name the is associated with it
+
+    Args:
+        ip (str): the ip address
+    Returns:
+        str: the interface name
+    """
+    res = execute("ip addr | grep '{}' -B2".format(ip))  # Get three lines of output
+    if res.get('status', 255) != 0:
+        raise Exception("Cannot find default interface: {}".format(res.get('stderr', '')))
+    dev = res['stdout'].split()[-1].strip()
+    if dev == "dynamic":
+        dev = res['stdout'].split("\n")[0].split()[1].strip(":")
+    return dev

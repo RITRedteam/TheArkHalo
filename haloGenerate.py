@@ -1,8 +1,10 @@
 from arkclient import ArkClient, ArkApiError
 import os
-from netassign import _addVirtualInterface, _delAllInterfaces
+from netassign import _addVirtualInterface, _delAllInterfaces, _getIp, _getInterfaceNameFromIp
 
-DEVICE='ens160'
+DEVICE=os.environ.get("INTERFACE_NAME", "")
+if not DEVICE:
+    DEVICE = _getInterfaceNameFromIp(_getIp())
 
 def allocateIPs(ips):
     valid_ips = []

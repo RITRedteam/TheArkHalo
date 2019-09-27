@@ -14,6 +14,9 @@ services:
         # If the proxy needs to add a host header, use this value
         - PROXY_HOST=cc.c2the.world
 
+        # If you need to specify the interface name
+        #- INTERFACE=ens160
+
         # Ark settings
         - THEARK_SERVER=http://10.4.1.10
         - THEARK_USER=admin
