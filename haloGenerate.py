@@ -65,7 +65,7 @@ def main():
         try:
             addrs = client.registerHalo(arktype, count)
         except ArkApiError:
-            pass
+            addrs = client.getAddresses(arktype)
     else:
         print("Halo is not registered, getting IPs")
         addrs = client.getAddresses(arktype)
