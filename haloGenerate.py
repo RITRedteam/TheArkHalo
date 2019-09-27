@@ -12,7 +12,8 @@ def allocateIPs(ips):
             print("Adding virtual IP", i)
             _addVirtualInterface(i, DEVICE)
             valid_ips.append(i)
-        except:
+        except Exception as E:
+            print("Cannot add virtual IP", i, type(E), E)
             pass
     return valid_ips
 
@@ -20,6 +21,7 @@ def addServers(data):
     srv_temp = "worker_processes 5;\nevents {\n    worker_connections 4096;\n}\
             \n\nhttp {\n    server {\n"
     valid_ips = allocateIPs(data['addresses'])
+    print(valid_ips)
     for ip in valid_ips:
         listen_str = "    listen    " + ip + ":80;\n"
         srv_temp += listen_str
