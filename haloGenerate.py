@@ -55,7 +55,7 @@ def main():
 
     # Register the new halo if it doesnt exist already
     register = register.lower().strip() in ["true", "yes", "1", "t"]
-    if register and arktype not in client.getHalos():
+    if register and arktype.lower() not in [x.lower() for x in client.getHalos()]:
         print("Registering {} with The Ark".format(arktype))
         print("Collecting {} addresses for {}".format(count, arktype))
         addrs = client.registerHalo(arktype, count)
