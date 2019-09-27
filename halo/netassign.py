@@ -1,10 +1,7 @@
 from subprocess import Popen, PIPE
 import random
 import socket
-import os
-import __main__ 
 
-LABEL=os.environ.get("HALO_NAME", "Halo")[:4].lower()
 
 def execute(args):
     '''
@@ -22,28 +19,29 @@ def execute(args):
         print(E)
     return retval
 
-def _addVirtualInterface(ip, dev):
+def _addVirtualInterface(ip, dev, name):
     '''
     add a virtual interface with the specified IP address
     Args:
         ip (str): The ip address to add
         dev (str): The dev to add the virtual interface to
-    
+
     Returns:
         dict: the label of the new interface
     '''
+    name = name[:4].lower()
     # Generate a label for the virtual interface
-    label = "{}:{}{}".format(dev, LABEL, random.randint(1, 1000))
+    label = "{}:{}{}".format(dev, name, random.randint(1, 1000))
     while label in _getInterfaceLabels(dev):
-        label = "{}:{}{}".format(dev, LABEL, random.randint(1, 1000))
+        label = "{}:{}{}".format(dev, name, random.randint(1, 1000))
     netmask = "/16" # TODO: I dont think this matters but it might haha
     # Add the interface
     command = "ip addr add {}{} brd + dev {} label {}"
     command = command.format(ip, netmask, dev, label)
     res = execute(command)
     if res.get('status', 255) != 0:
-        raise Exception("Cannot add interface: {}\n{}".format(
-                        res.get('stderr', ''), command))
+        raise ValueError("Cannot add interface: {}\n{}".format(
+            res.get('stderr', ''), command))
     return label
 
 def _getInterfaceLabels(dev):
@@ -75,13 +73,13 @@ def _delVirtualInterface(ip, dev):
                         res.get('stderr', '')))
     return True
 
-def _delAllInterfaces():
-    res = execute("ip a | grep {}:{} | awk '{{print $2}}'".format(__main__.DEVICE, LABEL)).get('stdout', '')
+def _delAllInterfaces(device, label=""):
+    res = execute("ip a | grep {}:{} | awk '{{print $2}}'".format(device, label)).get('stdout', '')
     ips = res.split("\n")
     for ip in ips:
         if ip:
             print("Deleting", ip)
-            _delVirtualInterface(ip, __main__.DEVICE)
+            _delVirtualInterface(ip, device)
 
 
 def _getIp(host="1.1.1.1"):

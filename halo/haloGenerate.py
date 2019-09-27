@@ -1,83 +1,109 @@
-from arkclient import ArkClient, ArkApiError
 import os
+import yaml
+from jinja2 import Template
+
+from arkclient import ArkClient, ArkApiError
 from netassign import _addVirtualInterface, _delAllInterfaces, _getIp, _getInterfaceNameFromIp
 
-DEVICE=os.environ.get("INTERFACE_NAME", "")
-if not DEVICE:
-    DEVICE = _getInterfaceNameFromIp(_getIp())
 
-def allocateIPs(ips):
-    valid_ips = []
-    print("IPS: " + str(ips))
-    for i in ips:
-        try:
-            print("Adding virtual IP", i)
-            _addVirtualInterface(i, DEVICE)
-            valid_ips.append(i)
-        except Exception as E:
-            print("Cannot add virtual IP", i, type(E), E)
-            pass
-    return valid_ips
-
-def addServers(data):
-    srv_temp = "worker_processes 5;\nevents {\n    worker_connections 4096;\n}\
-            \n\nhttp {\n    server {\n"
-    valid_ips = allocateIPs(data['addresses'])
-    if not valid_ips:
-        print("ERROR: No IP aliases could be added. Shutting down")
-        quit(255)
-    for ip in valid_ips:
-        listen_str = "    listen    " + ip + ":80;\n"
-        srv_temp += listen_str
-    loc_str = "\n    location / {\n        proxy_pass    " + data['upstreamip'] + ";\n"
-    if os.environ.get("PROXY_HOST", ""):
-        loc_str += "        proxy_set_header Host {};\n".format(os.environ.get("PROXY_HOST"))
-    loc_str += "    }\n}\n}"
-    srv_temp += loc_str
-
-    print(srv_temp)
-    with open("/etc/nginx/nginx.conf", "w+") as f:
-        f.write(srv_temp)
-    return srv_temp
-
-def main():
-    client = ArkClient(os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000"))
-    arkuser = os.environ.get("THEARK_USER", "admin")
-    arkpass = os.environ.get("THEARK_PASS", "letmein")
-    arktype = os.environ.get("HALO_NAME", "")
-    arkupst = os.environ.get("HALO_UPSTREAM", "")
-    register = os.environ.get('THEARK_REGISTER', "False")
-    count = os.environ.get('HALO_ADDR_COUNT', "15")
+def getArkAddrs(name=None, server=None, user=None, passwd=None, register=None, count=None, **_):
+    # TODO: Validate the values here
+    client = ArkClient(server)
     try:
-        count = int(count)
-    except ValueError:
-        count = 15
-
-    try:
-        client.login(arkuser, arkpass)
+        client.login(user, passwd)
     except:
-        raise Exception("Couldn't log in...")
-    
+        raise Exception("Couldn't log in to the Ark...")
 
     # Register the new halo if it doesnt exist already
     register = register.lower().strip() in ["true", "yes", "1", "t"]
-    if register and arktype.lower() not in [x.lower() for x in client.getHalos()]:
-        print("Registering {} with The Ark".format(arktype))
-        print("Collecting {} addresses for {}".format(count, arktype))
+    if register and name.lower() not in [x.lower() for x in client.getHalos()]:
+        print("Registering {} with The Ark".format(name))
+        print("Collecting {} addresses for {}".format(count, name))
         try:
-            addrs = client.registerHalo(arktype, count)
+            addrs = client.registerHalo(name, count)
         except ArkApiError:
-            addrs = client.getAddresses(arktype)
+            addrs = client.getAddresses(name)
     else:
         print("Halo is not registered, getting IPs")
-        addrs = client.getAddresses(arktype)
+        addrs = client.getAddresses(name)
         print(addrs)
-    addrs['upstreamip'] = arkupst
-    addServers(addrs)
-
-    print("In order to view the IP addresses assigned to {}, navigate to {}".format(arktype, os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000")))
+    return addrs
 
 
-if(__name__ == "__main__"):
-    _delAllInterfaces()
+def allocateIPs(data):
+    valid_ips = []
+    device = os.environ.get("INTERFACE_NAME", "")
+    if not device:
+        device = _getInterfaceNameFromIp(_getIp())
+    # Delete any interfaces using the IP address
+    _delAllInterfaces(device, label=data.get('name', ''))
+
+    for i in data['addresses']:
+        try:
+            print("Adding virtual IP", i)
+            _addVirtualInterface(i, device, data['name'])
+            valid_ips.append(i)
+        except ValueError as E:
+            print("Cannot add virtual IP", i, type(E), E)
+    return valid_ips
+
+
+def buildServer(data):
+    valid_ips = allocateIPs(data)
+    if not valid_ips:
+        raise ValueError("ERROR: No virtual IP aliases could be added. Shutting down")
+
+    data['addresses'] = valid_ips
+
+    with open('nginx.conf') as fil:
+        template = Template(fil.read())
+
+    nginx_conf = template.render(config=data)
+
+    print(nginx_conf)
+    with open("/etc/nginx/nginx.conf", "w+") as fil:
+        fil.write(nginx_conf)
+
+
+def main():
+    # Figure out if we are using a configuration file for addresses or getting them from the Ark
+
+    config = {}
+    config['upstream'] = os.environ.get("HALO_UPSTREAM", "")
+    addrs = None
+    ark = False
+    if os.environ.get("THEARK_USER") and os.environ.get("THEARK_PASS"):
+        config['user'] = os.environ.get("THEARK_USER")
+        config['passwd'] = os.environ.get("THEARK_PASS")
+        config['server'] = os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000")
+        config['name'] = os.environ.get("HALO_NAME", "")
+        config['register'] = os.environ.get('THEARK_REGISTER', "False")
+        count = os.environ.get('HALO_ADDR_COUNT', "15")
+        try:
+            count = int(count)
+        except ValueError:
+            count = 15
+        config['count'] = count
+        config['addresses'] = getArkAddrs(**config)
+        ark = True
+    # Use the config file if we dont have Ark
+    if not addrs:
+        config_path = os.environ.get("HALO_CONFIG", "config.yml")
+        if os.path.exists(config_path):
+            with open(config_path) as fil:
+                config = yaml.safe_load(fil)
+            if not isinstance(config['addresses'], list):
+                raise ValueError("Invalid addresses in {}. Must be an array".format(config_path))
+
+    # Validate that we have some IP addresses
+    if not config.get("addresses", []):
+        raise ValueError("ERROR: Config file not specified or Ark credentials not supplied")
+
+    buildServer(config)
+    if ark:
+        print("In order to view the IP addresses assigned to {}, navigate to {}".format(
+            config['name'], os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000")))
+
+
+if __name__ == "__main__":
     main()
