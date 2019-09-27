@@ -36,8 +36,15 @@ def main():
     client = ArkClient(os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000"))
     arkuser = os.environ.get("THEARK_USER", "admin")
     arkpass = os.environ.get("THEARK_PASS", "letmein")
-    arktype = os.environ.get("THEARK_TYPE", "")
-    arkupst = os.environ.get("THEARK_UPSTREAM", "")
+    arktype = os.environ.get("HALO_NAME", "")
+    arkupst = os.environ.get("HALO_UPSTREAM", "")
+    register = os.environ.get('THEARK_REGISTER', "False")
+    count = os.environ.get('HALO_ADDR_COUNT', "15")
+    try:
+        count = int(count)
+    except ValueError:
+        count = 15
+
     try:
         client.login(arkuser, arkpass)
     except:
@@ -45,17 +52,19 @@ def main():
     
 
     # Register the new halo if it doesnt exist already
-    register = os.environ.get('THEARK_REGISTER', "False")
     register = register.lower().strip() in ["true", "yes", "1", "t"]
     if register and arktype not in client.getHalos():
         print("Registering {} with The Ark".format(arktype))
-        addrs = client.registerHalo(arktype, 15) # Register 15 new IP addresses
+        print("Collecting {} addresses for {}".format(count, arktype))
+        addrs = client.registerHalo(arktype, count)
     else:
         print("Halo is not registered, getting IPs")
         addrs = client.getAddresses(arktype)
         print(addrs)
     addrs['upstreamip'] = arkupst
     addServers(addrs)
+
+    print("In order to view the IP addresses assigned to {}, navigate to {}".format(arktype, os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000")))
 
 
 if(__name__ == "__main__"):
