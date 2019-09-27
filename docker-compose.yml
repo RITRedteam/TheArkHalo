@@ -11,6 +11,9 @@ services:
         # The number of IPs to use for this service
         - HALO_ADDR_COUNT=15
 
+        # If the proxy needs to add a host header, use this value
+        - PROXY_HOST=cc.c2the.world
+
         # Ark settings
         - THEARK_SERVER=http://10.4.1.10
         - THEARK_USER=admin

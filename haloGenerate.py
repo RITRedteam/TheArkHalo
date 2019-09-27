@@ -23,8 +23,10 @@ def addServers(data):
     for ip in valid_ips:
         listen_str = "    listen    " + ip + ":80;\n"
         srv_temp += listen_str
-    loc_str = "\n    location / {\n        proxy_pass    " + data['upstreamip']\
-            + ";\n    }\n}\n}"
+    loc_str = "\n    location / {\n        proxy_pass    " + data['upstreamip'] + ";\n"
+    if os.environ.get("PROXY_HOST", ""):
+        loc_str += "        proxy_set_header Host {};\n".format(os.environ.get("PROXY_HOST"))
+    loc_str += "    }\n}\n}"
     srv_temp += loc_str
 
     print(srv_temp)
