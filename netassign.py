@@ -4,7 +4,7 @@ import socket
 import os
 import __main__ 
 
-LABEL=os.environ.get("THEARK_TYPE", "Name")[:4].lower()
+LABEL=os.environ.get("HALO_NAME", "Halo")[:4].lower()
 def execute(args):
     '''
     Execute a command. Pass the args as an array if there is more than one
@@ -35,7 +35,7 @@ def _addVirtualInterface(ip, dev):
     label = "{}:{}{}".format(dev, LABEL, random.randint(1, 1000))
     while label in _getInterfaceLabels(dev):
         label = "{}:{}{}".format(dev, LABEL, random.randint(1, 1000))
-    netmask = "/16"
+    netmask = "/16" # TODO: I dont think this matters but it might haha
     # Add the interface
     command = "ip addr add {}{} brd + dev {} label {}"
     command = command.format(ip, netmask, dev, label)
