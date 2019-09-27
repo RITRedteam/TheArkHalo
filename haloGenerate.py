@@ -1,4 +1,4 @@
-from arkclient import ArkClient
+from arkclient import ArkClient, ArkApiError
 import os
 from netassign import _addVirtualInterface, _delAllInterfaces
 
@@ -21,7 +21,9 @@ def addServers(data):
     srv_temp = "worker_processes 5;\nevents {\n    worker_connections 4096;\n}\
             \n\nhttp {\n    server {\n"
     valid_ips = allocateIPs(data['addresses'])
-    print(valid_ips)
+    if not valid_ips:
+        print("ERROR: No IP aliases could be added. Shutting down")
+        quit(255)
     for ip in valid_ips:
         listen_str = "    listen    " + ip + ":80;\n"
         srv_temp += listen_str
@@ -60,7 +62,10 @@ def main():
     if register and arktype.lower() not in [x.lower() for x in client.getHalos()]:
         print("Registering {} with The Ark".format(arktype))
         print("Collecting {} addresses for {}".format(count, arktype))
-        addrs = client.registerHalo(arktype, count)
+        try:
+            addrs = client.registerHalo(arktype, count)
+        except ArkApiError:
+            pass
     else:
         print("Halo is not registered, getting IPs")
         addrs = client.getAddresses(arktype)
