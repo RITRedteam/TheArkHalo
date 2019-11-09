@@ -35,7 +35,10 @@ def _addVirtualInterface(ip, dev):
     label = "{}:{}{}".format(dev, LABEL, random.randint(1, 1000))
     while label in _getInterfaceLabels(dev):
         label = "{}:{}{}".format(dev, LABEL, random.randint(1, 1000))
-    netmask = os.environ.get("INTERFACE_NETMASK", "/20")
+    netmask = os.environ.get("INTERFACE_NETMASK", None)
+    if netmask is None:
+        print("WARNING: Netmask env not set, using default '/24'")
+        netmask = '/24'
     # Add the interface
     command = "ip addr add {}{} brd + dev {} label {}"
     command = command.format(ip, netmask, dev, label)
