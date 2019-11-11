@@ -78,7 +78,6 @@ def _delAllInterfaces(device, label=""):
     ips = res.split("\n")
     for ip in ips:
         if ip:
-            print("Deleting", ip)
             _delVirtualInterface(ip, device)
 
 
