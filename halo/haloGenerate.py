@@ -3,7 +3,7 @@ import yaml
 from jinja2 import Template
 
 from arkclient import ArkClient, ArkApiError
-from netassign import _addVirtualInterface, _delAllInterfaces, _getIp, _getInterfaceNameFromIp
+from netassign import _addVirtualInterface, _delAllInterfaces, _getIp, _getInterfaceNameFromIp, _getSubnetMaskFromIp
 
 
 def getArkAddrs(name=None, server=None, user=None, passwd=None, register=None, count=None, **_):
@@ -16,17 +16,22 @@ def getArkAddrs(name=None, server=None, user=None, passwd=None, register=None, c
 
     # Register the new halo if it doesnt exist already
     register = register.lower().strip() in ["true", "yes", "1", "t"]
-    if register and name.lower() not in [x.lower() for x in client.getHalos()]:
-        print("Registering {} with The Ark".format(name))
-        print("Collecting {} addresses for {}".format(count, name))
+    halos = [x.lower() for x in client.getHalos()['halos']]
+    exists = name.lower() in halos
+    if not register and not exists:
+        print("[!] No Halo with the name {} exists and the Halo is not authorized to register with the Ark".format(name))
+        print("    set THEARK_REGISTER=True to automatically register the Halo")
+        quit(1)
+    if not exists:
+        print("[*] Registering {} with The Ark".format(name))
+        print("[*] Collecting {} addresses for {}...".format(count, name))
         try:
             addrs = client.registerHalo(name, count)
         except ArkApiError:
             addrs = client.getAddresses(name)
     else:
-        print("Halo is not registered, getting IPs")
         addrs = client.getAddresses(name)
-        print(addrs)
+        print("[*] {} addresses assigned to {}".format(len(addrs), name))
     return addrs
 
 
@@ -34,17 +39,26 @@ def allocateIPs(data):
     valid_ips = []
     device = os.environ.get("INTERFACE_NAME", "")
     if not device:
-        device = _getInterfaceNameFromIp(_getIp())
-    # Delete any interfaces using the IP address
-    _delAllInterfaces(device, label=data.get('name', ''))
+        # In this situation, we get the IP address that the target IP would be connected with
+        # not the default gateway
+        # I realize this function will error if there are no IPs, but that _shouldnt_ happen
+        ip = _getIp(data['addresses'][0])
+        device = _getInterfaceNameFromIp(ip)
+        netmask = _getSubnetMaskFromIp(ip)
+        print("[+] Detected interface: {}: {}{}".format(device, ip, netmask))
+    else:
+        netmask = os.environ.get("INTERFACE_MASK", "/24")
 
+    # Delete any interfaces using the IP address
+    print("[*] Deleting old interfaces....")
+    _delAllInterfaces(device, label=data.get('name', ''))
+    print("[*] Adding new interfaces")
     for i in data['addresses']:
         try:
-            print("Adding virtual IP", i)
-            _addVirtualInterface(i, device, data['name'])
+            _addVirtualInterface(i, device, netmask, data['name'])
             valid_ips.append(i)
         except ValueError as E:
-            print("Cannot add virtual IP", i, type(E), E)
+            print("[!] Cannot add virtual IP", i, type(E), E)
     return valid_ips
 
 
@@ -52,6 +66,9 @@ def buildServer(data):
     valid_ips = allocateIPs(data)
     if not valid_ips:
         raise ValueError("ERROR: No virtual IP aliases could be added. Shutting down")
+    
+    if len(valid_ips) < len(data.get("addresses", [])):
+        print("WARNING: Not all IP addresses have been allocated")
 
     data['addresses'] = valid_ips
 
@@ -75,16 +92,16 @@ def main():
     if os.environ.get("THEARK_USER") and os.environ.get("THEARK_PASS"):
         config['user'] = os.environ.get("THEARK_USER")
         config['passwd'] = os.environ.get("THEARK_PASS")
-        config['server'] = os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000")
+        config['server'] = os.environ.get("THEARK_SERVER")
         config['name'] = os.environ.get("HALO_NAME", "")
-        config['register'] = os.environ.get('THEARK_REGISTER', "False")
+        config['register'] = os.environ.get('THEARK_REGISTER', "True")
         count = os.environ.get('HALO_ADDR_COUNT', "15")
         try:
             count = int(count)
         except ValueError:
             count = 15
         config['count'] = count
-        config['addresses'] = getArkAddrs(**config)
+        config['addresses'] = getArkAddrs(**config).get("addresses", [])
         ark = True
     # Use the config file if we dont have Ark
     if not addrs:
@@ -102,7 +119,7 @@ def main():
     buildServer(config)
     if ark:
         print("In order to view the IP addresses assigned to {}, navigate to {}".format(
-            config['name'], os.environ.get("THEARK_SERVER", "http://0.0.0.0:5000")))
+            config['name'], os.environ.get("THEARK_SERVER")))
 
 
 if __name__ == "__main__":

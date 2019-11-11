@@ -20,7 +20,7 @@ def execute(args):
         print(E)
     return retval
 
-def _addVirtualInterface(ip, dev, name):
+def _addVirtualInterface(ip, dev, netmask, name):
     '''
     add a virtual interface with the specified IP address
     Args:
@@ -35,7 +35,6 @@ def _addVirtualInterface(ip, dev, name):
     label = "{}:{}{}".format(dev, name, random.randint(1, 1000))
     while label in _getInterfaceLabels(dev):
         label = "{}:{}{}".format(dev, name, random.randint(1, 1000))
-    netmask = os.environ.get("INTERFACE_NAME", "/20") # TODO: I dont think this matters but it might not haha
     # Add the interface
     command = "ip addr add {}{} brd + dev {} label {}"
     command = command.format(ip, netmask, dev, label)
