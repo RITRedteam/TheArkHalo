@@ -67,6 +67,7 @@ def _delVirtualInterface(ip, dev):
         ip (str): The ip address of the virtual interface
         dev (str, optional): the dev name
     '''
+    print("ip addr del {} dev {}".format(ip, dev))
     res = execute("ip addr del {} dev {}".format(ip, dev))
     if res.get('status', 255) != 0:
         raise Exception("Cannot delete interface: {}".format(
@@ -76,6 +77,7 @@ def _delVirtualInterface(ip, dev):
 def _delAllInterfaces(device, label=""):
     res = execute("ip a | grep {}:{} | awk '{{print $2}}'".format(device, label)).get('stdout', '')
     ips = res.split("\n")
+    print("Deleting ips", ips)
     for ip in ips:
         if ip:
             _delVirtualInterface(ip, device)

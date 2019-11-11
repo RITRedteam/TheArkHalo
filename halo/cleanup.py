@@ -15,4 +15,4 @@ else:
 
 # Delete any interfaces using the IP address
 print("[*] Deleting old interfaces....")
-_delAllInterfaces(device)
+_delAllInterfaces(device, label="ark")
