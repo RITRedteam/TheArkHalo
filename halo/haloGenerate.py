@@ -50,7 +50,7 @@ def allocateIPs(data):
 
     # Delete any interfaces using the IP address
     print("[*] Deleting old interfaces....")
-    _delAllInterfaces(device, label=data.get('name', ''))
+    _delAllInterfaces(device, label="ark")
     print("[*] Adding new interfaces")
     for i in data['addresses']:
         try:
