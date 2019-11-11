@@ -1,5 +1,4 @@
 import os
-import yaml
 from jinja2 import Template
 
 from arkclient import ArkClient, ArkApiError
@@ -104,6 +103,7 @@ def main():
         config['addresses'] = getArkAddrs(**config).get("addresses", [])
         ark = True
     # Use the config file if we dont have Ark
+    """
     if not addrs:
         config_path = os.environ.get("HALO_CONFIG", "config.yml")
         if os.path.exists(config_path):
@@ -111,7 +111,7 @@ def main():
                 config = yaml.safe_load(fil)
             if not isinstance(config['addresses'], list):
                 raise ValueError("Invalid addresses in {}. Must be an array".format(config_path))
-
+    """
     # Validate that we have some IP addresses
     if not config.get("addresses", []):
         raise ValueError("ERROR: Config file not specified or Ark credentials not supplied")
