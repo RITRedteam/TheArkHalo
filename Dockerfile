@@ -7,5 +7,5 @@ COPY ./halo /opt/app
 WORKDIR /opt/app
 RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
 

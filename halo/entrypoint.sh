@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 function cleanup() {
     # Delete all the old interfaces
@@ -10,7 +10,7 @@ trap 'cleanup' SIGTERM
 
 "${@}" &
 python3 haloGenerate.py
-nginx -g "daemon off;" &
+exec nginx -g "daemon off;" &
 
 #Wait
 wait $!
