@@ -54,7 +54,7 @@ def allocateIPs(data):
     print("[*] Adding new interfaces")
     for i in data['addresses']:
         try:
-            _addVirtualInterface(i, device, netmask, data['name'])
+            _addVirtualInterface(i, device, netmask, "ark")
             valid_ips.append(i)
         except ValueError as E:
             print("[!] Cannot add virtual IP", i, type(E), E)

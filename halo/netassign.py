@@ -34,7 +34,7 @@ def _addVirtualInterface(ip, dev, netmask, name):
     # Generate a label for the virtual interface
     label = "{}:{}{}".format(dev, name, random.randint(1, 5000))
     while label in _getInterfaceLabels(dev):
-        label = "{}:{}{}".format(dev, "ark", random.randint(1, 5000))
+        label = "{}:{}{}".format(dev, name, random.randint(1, 5000))
     # Add the interface
     command = "ip addr add {}{} brd + dev {} label {}"
     command = command.format(ip, netmask, dev, label)
