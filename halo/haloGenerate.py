@@ -92,7 +92,7 @@ def main():
         config['user'] = os.environ.get("THEARK_USER")
         config['passwd'] = os.environ.get("THEARK_PASS")
         config['server'] = os.environ.get("THEARK_SERVER")
-        config['name'] = os.environ.get("HALO_NAME", "")
+        config['name'] = os.environ.get("HALO_NAME")
         config['register'] = os.environ.get('THEARK_REGISTER', "True")
         count = os.environ.get('HALO_ADDR_COUNT', "15")
         try:

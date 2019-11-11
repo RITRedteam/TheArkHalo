@@ -1,7 +1,7 @@
 version: '3'
 services:
   halo:
-    build: .
+    build: https://github.com/RITRedteam/TheArkHalo.git
     network_mode: 'host'
     privileged: true
     environment:
@@ -15,7 +15,8 @@ services:
         - PROXY_HOST=cc.c2the.world
 
         # If you need to specify the interface name
-        #- INTERFACE=ens160
+        #- INTERFACE_NAME=ens160
+        #- INTERFACE_MASK=/24
 
         # Ark settings
         - THEARK_SERVER=http://10.4.1.10

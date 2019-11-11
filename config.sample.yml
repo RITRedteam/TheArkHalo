@@ -1,0 +1,27 @@
+---
+# This config is not yet implemented but will ideally be the way to define the standards for a halo
+halo:
+  # Name is required
+  name: MasterChief
+  address_count: 15 # Optional: Default 15, When this is specified, it will pull IPs from the Ark
+  interface: eth0   # Optional: Defaults to the default gateway
+
+  # When addresses is specified, it will use these IP's instead of pulling them from the ark
+  #addresses:
+  #  - 192.168.1.15
+
+  redirects:
+    # Http proxy: Only handles web traffic
+    - upstream: http://example.com  # Required: http[s]:// required for http redirects
+      # Optional: Headers will be passed to the upstream server
+      headers:
+        Host: example.com
+      # Optional: Will default to 80
+      ports:
+        - 80
+    # TCP proxy
+    - upstream: sample.com:22  # Host and port are required
+      # Listening ports are required
+      ports:
+        - 22
+        - 2222
