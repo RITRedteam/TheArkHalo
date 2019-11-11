@@ -74,7 +74,8 @@ class ArkClient(object):
         data = {
             "haloName": haloName
         }
-        if count:   data['count'] = count
+        if count:
+            data['count'] = count
         return self._send("post", data)
 
     def getHalos(self):
